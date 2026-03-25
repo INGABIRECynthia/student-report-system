@@ -1,8 +1,21 @@
 require('dotenv').config();
+
+// Validate required environment variables before starting the server
+const REQUIRED_ENV_VARS = ['JWT_SECRET'];
+const missingVars = REQUIRED_ENV_VARS.filter((v) => !process.env[v]);
+if (missingVars.length) {
+  console.error(
+    `FATAL: Missing required environment variable(s): ${missingVars.join(', ')}\n` +
+    'Copy server/.env.example to server/.env and fill in the values.'
+  );
+  process.exit(1);
+}
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const errorHandler = require('./middleware/errorHandler');
 const setupSocket = require('./socket');
 
@@ -11,7 +24,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: process.env.CLIENT_URL || 'http://localhost:3003',
     methods: ['GET', 'POST'],
   },
 });
@@ -21,22 +34,39 @@ app.set('io', io);
 setupSocket(io);
 
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3003', credentials: true }));
 app.use(express.json());
 
+// Rate limiters
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
+});
+
 // Routes
-app.use('/api/auth',     require('./routes/auth'));
-app.use('/api/students', require('./routes/students'));
-app.use('/api/subjects', require('./routes/subjects'));
-app.use('/api/marks',    require('./routes/marks'));
-app.use('/api/reports',  require('./routes/reports'));
+app.use('/api/auth',     authLimiter, require('./routes/auth'));
+app.use('/api/students', apiLimiter,  require('./routes/students'));
+app.use('/api/subjects', apiLimiter,  require('./routes/subjects'));
+app.use('/api/marks',    apiLimiter,  require('./routes/marks'));
+app.use('/api/reports',  apiLimiter,  require('./routes/reports'));
 
 app.get('/', (req, res) => res.json({ message: 'Student Report System API' }));
 
 // Error handler (must be last)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5003;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 module.exports = { app, server };

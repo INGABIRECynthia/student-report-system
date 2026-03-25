@@ -103,10 +103,10 @@ CREATE TABLE IF NOT EXISTS marks (
 -- Seed data
 -- ─────────────────────────────────────────────
 
--- Admin user  (password: Admin@123)
+-- Admin user  (password: password)
 INSERT INTO users (name, email, password, role) VALUES
-('Admin User',   'admin@school.com',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'admin'),
-('Jane Teacher', 'teacher@school.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'teacher');
+('Admin User',   'admin@school.com',   '$2a$10$/irl5ld5qIumrLPnFCNkSOKtrXyl9qvctGGMXs49GQ.6fSMi.p1fa', 'admin'),
+('Jane Teacher', 'teacher@school.com', '$2a$10$CvVQCgpoc0q3bkWsarrvBusMmYms6YhgVXWaeXNa8d42VNBsWoL9a', 'teacher');
 
 -- Classes
 INSERT INTO classes (name, description) VALUES
