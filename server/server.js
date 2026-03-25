@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const errorHandler = require('./middleware/errorHandler');
 const setupSocket = require('./socket');
 
@@ -24,12 +25,29 @@ setupSocket(io);
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 
+// Rate limiters
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
+});
+
 // Routes
-app.use('/api/auth',     require('./routes/auth'));
-app.use('/api/students', require('./routes/students'));
-app.use('/api/subjects', require('./routes/subjects'));
-app.use('/api/marks',    require('./routes/marks'));
-app.use('/api/reports',  require('./routes/reports'));
+app.use('/api/auth',     authLimiter, require('./routes/auth'));
+app.use('/api/students', apiLimiter,  require('./routes/students'));
+app.use('/api/subjects', apiLimiter,  require('./routes/subjects'));
+app.use('/api/marks',    apiLimiter,  require('./routes/marks'));
+app.use('/api/reports',  apiLimiter,  require('./routes/reports'));
 
 app.get('/', (req, res) => res.json({ message: 'Student Report System API' }));
 
