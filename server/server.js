@@ -1,4 +1,16 @@
 require('dotenv').config();
+
+// Validate required environment variables before starting the server
+const REQUIRED_ENV_VARS = ['JWT_SECRET'];
+const missingVars = REQUIRED_ENV_VARS.filter((v) => !process.env[v]);
+if (missingVars.length) {
+  console.error(
+    `FATAL: Missing required environment variable(s): ${missingVars.join(', ')}\n` +
+    'Copy server/.env.example to server/.env and fill in the values.'
+  );
+  process.exit(1);
+}
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
